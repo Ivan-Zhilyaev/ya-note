@@ -58,3 +58,64 @@ class TestNoteCreatePage(TestCase):
             'придумайте уникальное значение!',
             form.errors['slug']
         )
+
+
+class TestNoteEditPage(TestCase):
+    """Тестирование страницы редактирования заметки."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = User.objects.create(username='Автор')
+        cls.note = Note.objects.create(
+            title='Заголовок',
+            text='Текст заметки',
+            slug='test-slug',
+            author=cls.author
+        )
+        cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
+
+    def setUp(self):
+        self.client.force_login(self.author)
+
+    def test_edit_page_contains_form(self):
+        """На страницу редактирования заметки передаётся форма."""
+        response = self.client.get(self.edit_url)
+        self.assertIn('form', response.context)
+        self.assertIsInstance(response.context['form'], NoteForm)
+
+
+class TestNoteListPage(TestCase):
+    """Тестирование страницы списка заметок."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = User.objects.create(username='Автор')
+        cls.other_user = User.objects.create(username='Другой пользователь')
+        cls.list_url = reverse('notes:list')
+        cls.note = Note.objects.create(
+            title='Заголовок',
+            text='Текст',
+            slug='test-slug',
+            author=cls.author
+        )
+
+    def test_note_in_list_for_author(self):
+        """
+        Отдельная заметка передаётся на страницу со списком заметок
+        в списке object_list для автора.
+        """
+        self.client.force_login(self.author)
+        response = self.client.get(self.list_url)
+        self.assertIn('object_list', response.context)
+        object_list = response.context['object_list']
+        self.assertIn(self.note, object_list)
+
+    def test_note_not_in_list_for_other_user(self):
+        """
+        В список заметок одного пользователя не попадают
+        заметки другого пользователя.
+        """
+        self.client.force_login(self.other_user)
+        response = self.client.get(self.list_url)
+        object_list = response.context['object_list']
+        self.assertNotIn(self.note, object_list)
