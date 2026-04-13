@@ -1,28 +1,10 @@
-from django.test import Client
-
 from notes.forms import NoteForm
-from notes.models import Note
 
 from .base import BaseTestCase
 
 
 class TestContent(BaseTestCase):
     """Тестирование контента."""
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
-
-        cls.other_note = Note.objects.create(
-            title='Чужая заметка',
-            text='Текст',
-            slug='other-slug',
-            author=cls.reader
-        )
 
     def test_pages_contains_form(self):
         """На страницы создания и редактирования передаётся форма."""

@@ -1,38 +1,44 @@
 from http import HTTPStatus
 
-from django.test import Client
-
 from .base import BaseTestCase
 
 
 class TestRoutes(BaseTestCase):
     """Тестирование маршрутов."""
 
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
-
     def test_pages_availability(self):
         """Доступность страниц для разных пользователей."""
         test_cases = (
-            (self.home_url, self.client, HTTPStatus.OK),
-            (self.login_url, self.client, HTTPStatus.OK),
-            (self.signup_url, self.client, HTTPStatus.OK),
-            (self.logout_url, self.client, HTTPStatus.METHOD_NOT_ALLOWED),
-            (self.detail_url, self.author_client, HTTPStatus.OK),
-            (self.edit_url, self.author_client, HTTPStatus.OK),
-            (self.delete_url, self.author_client, HTTPStatus.OK),
-            (self.detail_url, self.reader_client, HTTPStatus.NOT_FOUND),
-            (self.edit_url, self.reader_client, HTTPStatus.NOT_FOUND),
-            (self.delete_url, self.reader_client, HTTPStatus.NOT_FOUND),
+            (self.home_url, self.client, HTTPStatus.OK, 'Аноним'),
+            (self.login_url, self.client, HTTPStatus.OK, 'Аноним'),
+            (self.signup_url, self.client, HTTPStatus.OK, 'Аноним'),
+            (
+                self.logout_url, self.client,
+                HTTPStatus.METHOD_NOT_ALLOWED,
+                'Аноним'
+            ),
+            (self.detail_url, self.author_client, HTTPStatus.OK, 'Автор'),
+            (self.edit_url, self.author_client, HTTPStatus.OK, 'Автор'),
+            (self.delete_url, self.author_client, HTTPStatus.OK, 'Автор'),
+            (
+                self.detail_url, self.reader_client,
+                HTTPStatus.NOT_FOUND,
+                'Читатель'
+            ),
+            (
+                self.edit_url, self.reader_client,
+                HTTPStatus.NOT_FOUND,
+                'Читатель'
+            ),
+            (
+                self.delete_url, self.reader_client,
+                HTTPStatus.NOT_FOUND,
+                'Читатель'
+            ),
         )
 
-        for url, client, expected_status in test_cases:
-            with self.subTest(url=url, client=client):
+        for url, client, expected_status, user_desc in test_cases:
+            with self.subTest(url=url, user=user_desc):
                 response = client.get(url)
                 self.assertEqual(response.status_code, expected_status)
 
